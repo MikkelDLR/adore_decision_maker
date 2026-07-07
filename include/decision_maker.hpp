@@ -100,7 +100,7 @@ private:
   void timer_callback(); // main loop
 
   behavior::Behavior choose_and_plan_driving_behavior();
-  adore_ros2_msgs::msg::TrafficParticipant make_default_participant();
+  dynamics::TrafficParticipant make_default_participant();
 };
 
 } // namespace adore
