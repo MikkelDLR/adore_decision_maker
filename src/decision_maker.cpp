@@ -12,6 +12,7 @@
  ********************************************************************************/
 
 #include "decision_maker.hpp"
+#include "adore_ros2_msgs/msg/remote_operation_status.hpp"
 #include "adore_ros2_msgs/msg/traffic_participant.hpp"
 #include "adore_ros2_msgs/msg/traffic_participant_set.hpp"
 #include <adore_dynamics_conversions.hpp>
@@ -228,7 +229,7 @@ void DecisionMaker::setup_subscribers()
                                         latest_route = new_route;
                                       });
 
-  subscriber_odd = create_subscription<open_odd_ros2_msgs::msg::OddEvaluation>( "odd", 1,
+  subscriber_odd = create_subscription<open_odd_ros2_msgs::msg::OddEvaluation>( "odd_evaluation", 1,
                                       [this](const open_odd_ros2_msgs::msg::OddEvaluation& msg) {  latest_odd = msg; });
 
   subscriber_traffic_participants = create_subscription<adore_ros2_msgs::msg::TrafficParticipantSet>( "traffic_participants", 1,
@@ -313,9 +314,6 @@ void DecisionMaker::setup_subscribers()
   subscriber_safety_corridor = create_subscription<adore_ros2_msgs::msg::SafetyCorridor>( "safety_corridor", 1,
                                       [this](const adore_ros2_msgs::msg::SafetyCorridor& msg) { latest_safety_corridor = msg; });
 
-  subscriber_caution_zones = create_subscription<adore_ros2_msgs::msg::CautionZone>( "caution_zones", 1,
-                                      [this](const adore_ros2_msgs::msg::CautionZone& msg) {  caution_zones[msg.label] = math::conversions::to_cpp_type(msg.polygon); });
-
   subscriber_weather = create_subscription<adore_ros2_msgs::msg::Weather>( "weather", 1,
                                       [this](const adore_ros2_msgs::msg::Weather& msg) {  latest_weather = msg; });
 
@@ -334,6 +332,9 @@ void DecisionMaker::setup_subscribers()
 
   subscriber_unstructured_drivable_area = create_subscription<adore_ros2_msgs::msg::CautionZone>( "unstructured_drivable_area", 1,
                                     [this](const adore_ros2_msgs::msg::CautionZone& msg) {  unstructured_drivable_area = math::conversions::to_cpp_type(msg.polygon); });
+
+  subscriber_remote_operation_status = create_subscription<adore_ros2_msgs::msg::RemoteOperationStatus>( "remote_operation_status", 1,
+                                    [this](const adore_ros2_msgs::msg::RemoteOperationStatus& msg) {  remote_operation_status = msg; });
 }
 
 void DecisionMaker::setup_publishers()
@@ -373,11 +374,11 @@ behavior::Behavior DecisionMaker::choose_and_plan_driving_behavior()
 
   bool has_localization = conditions::has_localization(latest_vehicle_state_dynamic, time_now);
   bool has_mission = conditions::has_mission(latest_vehicle_state_dynamic, latest_route);
-  bool needs_remote_operator_assitance = conditions::needs_remote_operator_assitance( latest_vehicle_state_dynamic, caution_zones ); 
   bool needs_to_avoid_safety_corridor = conditions::needs_to_avoid_safety_corridor(latest_vehicle_state_dynamic, latest_safety_corridor);
   bool can_drive_managed = conditions::can_drive_managed(latest_vehicle_state_dynamic, time_now, latest_managed_zone, latest_managed_trajectory);
   bool odd_conditions_satisfied = conditions::odd_conditions_satisfied(latest_odd, time_now);
   bool must_drive_unstructured = conditions::must_drive_unstructured( latest_vehicle_state_dynamic, unstructured_drivable_area );
+  bool remote_operation_is_available = conditions::remote_operations_is_available( remote_operation_status, time_now );
 
   if (
     has_localization &&
@@ -394,7 +395,8 @@ behavior::Behavior DecisionMaker::choose_and_plan_driving_behavior()
 
   if ( 
       must_drive_unstructured &&
-      has_localization )
+      has_localization 
+    )
   {
     return behavior::driving_unstructured(
                                 unstructured_planner,
@@ -408,7 +410,8 @@ behavior::Behavior DecisionMaker::choose_and_plan_driving_behavior()
   if (
       has_localization &&
       has_mission &&
-      needs_remote_operator_assitance
+      !odd_conditions_satisfied &&
+      remote_operation_is_available 
     )
   {
     return behavior::remote_operations(
