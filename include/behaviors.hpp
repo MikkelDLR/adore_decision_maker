@@ -40,6 +40,7 @@
 #include "planning/planning_helpers.hpp"
 
 #include "planning/obstacle_avoidance.hpp"
+#include <dynamics/maneuver_advice.hpp>
 #include <planning/active_avoidance_state.hpp>
 
 namespace adore
@@ -53,6 +54,12 @@ namespace behavior
         std::optional<adore_ros2_msgs::msg::Route> modified_route;
         adore_ros2_msgs::msg::VehicleSignals signals;
         std::string decision_overview;
+    };
+
+    enum ManagedBehavior
+    {
+        FollowTrajectory,
+        FollowManged,
     };
 
     const double MAX_DISTANCE_TO_LAST_TRAJECTORY_POINT_BEFORE_RETURNING_TO_REMOTE_OPERATIONS_DRIVING = 1.0;
@@ -83,7 +90,9 @@ namespace behavior
                             planner::TrajectoryPlanner& planner,
                             const dynamics::VehicleStateDynamic& vehicle_state_dynamic,  
                             const dynamics::Trajectory& managed_trajectory, 
-                            const math::Polygon2d managed_zone
+                            const dynamics::ManeuverAdvice& managed_maneuver_advice, 
+                            const math::Polygon2d managed_zone,
+                            const ManagedBehavior& managed_behavior
     );
 
     Behavior waiting_for_mission(

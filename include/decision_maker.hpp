@@ -15,6 +15,7 @@
 
 #include "behaviors.hpp"
 #include "conditions.hpp"
+#include <dynamics/maneuver_advice.hpp>
 #include <dynamics/traffic_participant.hpp>
 #include <rclcpp/rclcpp.hpp>
 
@@ -130,6 +131,8 @@ private:
   //std::optional<UserComfortSettings> latest_user_comfort;
 
   std::optional<dynamics::Trajectory> latest_managed_trajectory;
+  std::optional<dynamics::ManeuverAdvice> latest_managed_maneuver_advice;
+  behavior::ManagedBehavior managed_behavior = behavior::ManagedBehavior::FollowTrajectory;
   std::optional<math::Polygon2d> latest_managed_zone;
 
   dynamics::TrafficParticipantSet traffic_participants;

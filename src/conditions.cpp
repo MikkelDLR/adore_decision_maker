@@ -13,6 +13,7 @@
 
 #include "conditions.hpp"
 #include "open_odd_ros2_msgs/msg/odd_evaluation.hpp"
+#include <dynamics/maneuver_advice.hpp>
 #include <dynamics/vehicle_state.hpp>
 
 
@@ -67,7 +68,9 @@ bool can_drive_managed(
                         const std::optional<dynamics::VehicleStateDynamic>& vehicle_state_dynamic, 
                         const double& time_now, 
                         const std::optional<math::Polygon2d>& managed_zone, 
-                        const std::optional<dynamics::Trajectory>& managed_trajectory)
+                        const std::optional<dynamics::Trajectory>& managed_trajectory,
+                        const std::optional<dynamics::ManeuverAdvice>& managed_maneuver_advice
+)
 {
     if (
         !vehicle_state_dynamic.has_value() ||

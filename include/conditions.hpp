@@ -40,7 +40,7 @@ namespace adore
         bool has_localization( const std::optional<dynamics::VehicleStateDynamic>& vehicle_state_dynamic, const double& time_now);
         bool has_mission( const std::optional<dynamics::VehicleStateDynamic>& vehicle_state_dynamic, const std::optional<map::Route>& route );
         bool needs_to_avoid_safety_corridor( const std::optional<dynamics::VehicleStateDynamic>& vehicle_state_dynamic, const std::optional<adore_ros2_msgs::msg::SafetyCorridor>& safety_corridor );
-        bool can_drive_managed( const std::optional<dynamics::VehicleStateDynamic>& vehicle_state_dynamic, const double& time_now, const std::optional<math::Polygon2d>& managed_zone, const std::optional<dynamics::Trajectory>& managed_trajectory);
+        bool can_drive_managed( const std::optional<dynamics::VehicleStateDynamic>& vehicle_state_dynamic, const double& time_now, const std::optional<math::Polygon2d>& managed_zone, const std::optional<dynamics::Trajectory>& managed_trajectory, const std::optional<dynamics::ManeuverAdvice>& managed_maneuver_advice);
         bool odd_conditions_satisfied( const std::optional<open_odd_ros2_msgs::msg::OddEvaluation>& odd, const double& time_now );
         bool road_completely_blocked( const std::optional<dynamics::VehicleStateDynamic>& vehicle_state_dynamic,
                                       const std::optional<map::Route>& route,

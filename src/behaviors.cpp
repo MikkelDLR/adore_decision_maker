@@ -247,7 +247,9 @@ namespace behavior
                             [[maybe_unused]] planner::TrajectoryPlanner& planner,
                             [[maybe_unused]] const dynamics::VehicleStateDynamic& vehicle_state_dynamic,
                             const dynamics::Trajectory& managed_trajectory,
-                            [[maybe_unused]] const math::Polygon2d managed_zone
+                            const dynamics::ManeuverAdvice& managed_maneuver_advice, 
+                            [[maybe_unused]] const math::Polygon2d managed_zone,
+                            const ManagedBehavior& managed_behavior
     )
     {
         Behavior trajectory_and_signals;

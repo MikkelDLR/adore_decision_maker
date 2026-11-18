@@ -352,7 +352,7 @@ behavior::Behavior DecisionMaker::choose_and_plan_driving_behavior(
   bool has_localization = conditions::has_localization(latest_vehicle_state_dynamic, time_now);
   bool has_mission = conditions::has_mission(latest_vehicle_state_dynamic, latest_route);
   bool needs_to_avoid_safety_corridor = conditions::needs_to_avoid_safety_corridor(latest_vehicle_state_dynamic, latest_safety_corridor);
-  bool can_drive_managed = conditions::can_drive_managed(latest_vehicle_state_dynamic, time_now, latest_managed_zone, latest_managed_trajectory);
+  bool can_drive_managed = conditions::can_drive_managed(latest_vehicle_state_dynamic, time_now, latest_managed_zone, latest_managed_trajectory, latest_managed_maneuver_advice);
   bool odd_conditions_satisfied = conditions::odd_conditions_satisfied(latest_odd, time_now);
   bool road_completely_blocked = conditions::road_completely_blocked( latest_vehicle_state_dynamic, latest_route, all_traffic_participants, last_time_road_was_completely_blocked, time_now );
   bool remote_operation_is_available = conditions::remote_operations_is_available( remote_operation_status, time_now );
@@ -462,7 +462,9 @@ behavior::Behavior DecisionMaker::choose_and_plan_driving_behavior(
                   planner,
                   latest_vehicle_state_dynamic.value(),
                   latest_managed_trajectory.value(),
-                  latest_managed_zone.value()
+                  latest_managed_maneuver_advice.value(),
+                  latest_managed_zone.value(),
+                  managed_behavior
     );
   }
 
