@@ -59,7 +59,7 @@ namespace behavior
     enum ManagedBehavior
     {
         FollowTrajectory,
-        FollowManged,
+        FollowManeuverAdvice,
     };
 
     const double MAX_DISTANCE_TO_LAST_TRAJECTORY_POINT_BEFORE_RETURNING_TO_REMOTE_OPERATIONS_DRIVING = 1.0;
@@ -88,9 +88,11 @@ namespace behavior
 
     Behavior driving_mission_following_managed(
                             planner::TrajectoryPlanner& planner,
-                            const dynamics::VehicleStateDynamic& vehicle_state_dynamic,  
-                            const dynamics::Trajectory& managed_trajectory, 
-                            const dynamics::ManeuverAdvice& managed_maneuver_advice, 
+                            const dynamics::VehicleStateDynamic& vehicle_state_dynamic,
+                            const map::Route& route,
+                            const dynamics::TrafficParticipantSet& traffic_participants,
+                            const dynamics::Trajectory& managed_trajectory,
+                            const dynamics::ManeuverAdvice& managed_maneuver_advice,
                             const math::Polygon2d managed_zone,
                             const ManagedBehavior& managed_behavior
     );

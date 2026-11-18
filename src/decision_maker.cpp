@@ -98,6 +98,11 @@ void DecisionMaker::load_parameters()
 {  
   v2x_id = declare_parameter( "v2x_id", v2x_id );
 
+  bool follow_managed_maneuvers_over_managed_trajectories = declare_parameter( "follow_managed_maneuvers_over_managed_trajectories", false );
+
+  if ( follow_managed_maneuvers_over_managed_trajectories )
+    managed_behavior = behavior::ManagedBehavior::FollowManeuverAdvice;
+
   std::vector<std::string> keys   = declare_parameter( "planner_settings_keys", std::vector<std::string>{} );
   std::vector<double>      values = declare_parameter( "planner_settings_values", std::vector<double>{} );
 
@@ -196,7 +201,12 @@ void DecisionMaker::setup_subscribers()
 
                                           if ( participant.trajectory.has_value() )
                                           {
-                                            latest_managed_trajectory = participant.trajectory; 
+                                            latest_managed_trajectory = participant.trajectory;
+                                          }
+
+                                          if ( participant.maneuver_advice.has_value() )
+                                          {
+                                            latest_managed_maneuver_advice = participant.maneuver_advice;
                                           }
                                         }
 
@@ -450,22 +460,22 @@ behavior::Behavior DecisionMaker::choose_and_plan_driving_behavior(
   }
 
   if (
-    has_localization &&
-    has_mission &&
-    odd_conditions_satisfied && 
-    can_drive_managed
-
+      has_localization &&
+      has_mission &&
+      odd_conditions_satisfied &&
+      can_drive_managed
   )
   {
-    active_avoidance_state.reset();
     return behavior::driving_mission_following_managed(
-                  planner,
-                  latest_vehicle_state_dynamic.value(),
-                  latest_managed_trajectory.value(),
-                  latest_managed_maneuver_advice.value(),
-                  latest_managed_zone.value(),
-                  managed_behavior
-    );
+                                                        planner, 
+                                                        latest_vehicle_state_dynamic.value(), 
+                                                        latest_route.value(),
+                                                        all_traffic_participants,
+                                                        latest_managed_trajectory.value(),
+                                                        latest_managed_maneuver_advice.value(), 
+                                                        latest_managed_zone.value(), 
+                                                        managed_behavior 
+                                                      );
   }
 
   if (
@@ -474,20 +484,17 @@ behavior::Behavior DecisionMaker::choose_and_plan_driving_behavior(
       odd_conditions_satisfied
   )
   {
-    // driving_unstructured = false;
-    // can_drive_unstructured = false;
     return behavior::driving_mission(
-                                planner,
-                                latest_vehicle_state_dynamic.value(),
-                                latest_route.value(),
-                                all_traffic_participants,
-                                comfort_settings,
-                                traffic_signals,
-                                latest_weather,
-                                obstacle_avoidance_params,
-                                active_avoidance_state,
-                                must_evacuate
-                              );
+                                      planner, 
+                                      latest_vehicle_state_dynamic.value(), 
+                                      latest_route.value(), 
+                                      all_traffic_participants,
+                                      comfort_settings, 
+                                      traffic_signals, 
+                                      latest_weather, 
+                                      obstacle_avoidance_params, 
+                                      active_avoidance_state,
+                                      must_evacuate );
   }
 
   if ( 

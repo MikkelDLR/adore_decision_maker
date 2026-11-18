@@ -244,25 +244,71 @@ namespace behavior
     }
 
     Behavior driving_mission_following_managed(
-                            [[maybe_unused]] planner::TrajectoryPlanner& planner,
-                            [[maybe_unused]] const dynamics::VehicleStateDynamic& vehicle_state_dynamic,
+                            planner::TrajectoryPlanner& planner,
+                            const dynamics::VehicleStateDynamic& vehicle_state_dynamic,
+                            const map::Route& route,
+                            const dynamics::TrafficParticipantSet& traffic_participants,
                             const dynamics::Trajectory& managed_trajectory,
-                            const dynamics::ManeuverAdvice& managed_maneuver_advice, 
-                            [[maybe_unused]] const math::Polygon2d managed_zone,
+                            const dynamics::ManeuverAdvice& managed_maneuver_advice,
+                            const math::Polygon2d,
                             const ManagedBehavior& managed_behavior
     )
     {
-        Behavior trajectory_and_signals;
-        trajectory_and_signals.trajectory = dynamics::conversions::to_ros_msg( managed_trajectory );
-        trajectory_and_signals.trajectory.label = "driving mission (following managed)";
+        dynamics::Trajectory local_trajectory;
+        switch( managed_behavior )
+        {
+            case FollowTrajectory:
+                break;
+            case FollowManeuverAdvice:
+            {
+                if( route.reference_line.size() < 2 )
+                    break;
+                auto route_point = route.reference_line.lower_bound( route.get_s( vehicle_state_dynamic ) );
+                if( route_point == route.reference_line.end() || ++route_point == route.reference_line.end() )
+                    break;
 
-        return trajectory_and_signals;
+                switch( managed_maneuver_advice.maneuver )
+                {
+                    case dynamics::FollowRoute:
+                        local_trajectory = planner.plan_route_trajectory( route, vehicle_state_dynamic, traffic_participants );
+                        break;
+                    case dynamics::SlowDown:
+                    {
+                        const double target_speed = managed_maneuver_advice.target_speed_mps;
+                        if( !std::isfinite( target_speed ) || target_speed < 0.0 ) // This check is not needed, but doesn't hurt
+                            break;
+
+                        auto limited_route = route;
+                        for( auto& [s, point] : limited_route.reference_line )
+                            point.max_speed = std::min( point.max_speed.value_or( target_speed ), target_speed );
+
+                        local_trajectory = planner.plan_route_trajectory( limited_route, vehicle_state_dynamic, traffic_participants );
+                        break;
+                    }
+                    case dynamics::Stop:
+                        break;
+                }
+                break;
+            }
+        }
+
+        Behavior behavior;
+        if( !local_trajectory.states.empty() )
+        {
+            behavior.trajectory = dynamics::conversions::to_ros_msg( local_trajectory );
+            behavior.trajectory.label = "driving mission (following managed maneuver)";
+            return behavior;
+        }
+
+        behavior.trajectory = dynamics::conversions::to_ros_msg( managed_trajectory );
+        behavior.trajectory.label = "driving mission (following managed trajectory)";
+        return behavior;
     }
 
     Behavior waiting_for_mission(
-                                [[maybe_unused]] planner::TrajectoryPlanner& planner,
+                                planner::TrajectoryPlanner&,
                                 const dynamics::VehicleStateDynamic& vehicle_state_dynamic,
-                                [[maybe_unused]] const dynamics::TrafficParticipantSet& traffic_participants
+                                const dynamics::TrafficParticipantSet&
                             )
     {
         dynamics::Trajectory trajectory;
@@ -463,7 +509,7 @@ namespace behavior
     }
 
     Behavior emergency(
-                            [[maybe_unused]] planner::TrajectoryPlanner& planner,
+                            planner::TrajectoryPlanner&,
                             const std::optional<dynamics::VehicleStateDynamic>& vehicle_state_dynamic
     )
     {

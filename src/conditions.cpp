@@ -75,7 +75,8 @@ bool can_drive_managed(
     if (
         !vehicle_state_dynamic.has_value() ||
         !managed_zone.has_value() ||
-        !managed_trajectory.has_value()
+        !managed_trajectory.has_value() ||
+        !managed_maneuver_advice.has_value()
     )
     {
         return false;
